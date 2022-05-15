@@ -13,7 +13,8 @@ tar = "0.4"
 ## SGX related
 
 When compiled in an SGX project, this port disable all access to the filesystem, as Intel SGX consider the filesystem as unsafe.
-It is only possible to load a tar file into memory.
+
+It is only possible to load a tar file from memory.
 
 ## Reading an archive (without SGX)
 
