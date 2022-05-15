@@ -1,3 +1,4 @@
+#[cfg(not(target_env = "sgx"))]
 use std::fs;
 use std::io;
 use std::io::prelude::*;
@@ -5,6 +6,7 @@ use std::path::Path;
 use std::str;
 
 use crate::header::{path2bytes, HeaderMode};
+#[allow(unused_imports)]
 use crate::{other, EntryType, Header};
 
 /// A structure for building archives
@@ -234,6 +236,7 @@ impl<W: Write> Builder<W> {
     ///
     /// ar.append_path("foo/bar.txt").unwrap();
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn append_path<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
         let mode = self.mode.clone();
         let follow = self.follow;
@@ -268,6 +271,7 @@ impl<W: Write> Builder<W> {
     /// // "bar/foo.txt".
     /// ar.append_path_with_name("foo/bar.txt", "bar/foo.txt").unwrap();
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn append_path_with_name<P: AsRef<Path>, N: AsRef<Path>>(
         &mut self,
         path: P,
@@ -310,6 +314,7 @@ impl<W: Write> Builder<W> {
     /// let mut f = File::open("foo/bar/baz.txt").unwrap();
     /// ar.append_file("bar/baz.txt", &mut f).unwrap();
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn append_file<P: AsRef<Path>>(&mut self, path: P, file: &mut fs::File) -> io::Result<()> {
         let mode = self.mode.clone();
         append_file(self.get_mut(), path.as_ref(), file, mode)
@@ -343,6 +348,7 @@ impl<W: Write> Builder<W> {
     /// // with a different name.
     /// ar.append_dir("bardir", ".").unwrap();
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn append_dir<P, Q>(&mut self, path: P, src_path: Q) -> io::Result<()>
     where
         P: AsRef<Path>,
@@ -374,6 +380,7 @@ impl<W: Write> Builder<W> {
     /// // with a different name.
     /// ar.append_dir_all("bardir", ".").unwrap();
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn append_dir_all<P, Q>(&mut self, path: P, src_path: Q) -> io::Result<()>
     where
         P: AsRef<Path>,
@@ -420,6 +427,7 @@ fn append(mut dst: &mut dyn Write, header: &Header, mut data: &mut dyn Read) -> 
     Ok(())
 }
 
+#[cfg(not(target_env = "sgx"))]
 fn append_path_with_name(
     dst: &mut dyn Write,
     path: &Path,
@@ -469,7 +477,7 @@ fn append_path_with_name(
     }
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_env = "sgx")))]
 fn append_special(
     dst: &mut dyn Write,
     path: &Path,
@@ -513,6 +521,7 @@ fn append_special(
     Ok(())
 }
 
+#[cfg(not(target_env = "sgx"))]
 fn append_file(
     dst: &mut dyn Write,
     path: &Path,
@@ -523,6 +532,7 @@ fn append_file(
     append_fs(dst, path, &stat, file, mode, None)
 }
 
+#[cfg(not(target_env = "sgx"))]
 fn append_dir(
     dst: &mut dyn Write,
     path: &Path,
@@ -598,6 +608,7 @@ fn prepare_header_link(
     Ok(())
 }
 
+#[cfg(not(target_env = "sgx"))]
 fn append_fs(
     dst: &mut dyn Write,
     path: &Path,
@@ -617,6 +628,7 @@ fn append_fs(
     append(dst, &header, read)
 }
 
+#[cfg(not(target_env = "sgx"))]
 fn append_dir_all(
     dst: &mut dyn Write,
     path: &Path,

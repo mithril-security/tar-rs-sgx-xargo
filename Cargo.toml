@@ -18,14 +18,12 @@ writers. Additionally, great lengths are taken to ensure that the entire
 contents are never required to be entirely resident in memory all at once.
 """
 
-[dependencies]
-filetime = "0.2.8"
-
 [dev-dependencies]
 tempfile = "3"
 
-[target."cfg(unix)".dependencies]
+[target.'cfg(all(unix, not(target_env = "sgx")))'.dependencies]
 xattr = { version = "0.2", optional = true }
+filetime = "0.2.8"
 libc = "0.2"
 
 [features]

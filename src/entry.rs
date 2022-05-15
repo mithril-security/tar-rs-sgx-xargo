@@ -1,17 +1,24 @@
 use std::borrow::Cow;
 use std::cmp;
+#[cfg(not(target_env = "sgx"))]
 use std::fs;
+#[cfg(not(target_env = "sgx"))]
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+#[allow(unused_imports)]
 use std::io::{self, Error, ErrorKind, SeekFrom};
 use std::marker;
+#[allow(unused_imports)]
 use std::path::{Component, Path, PathBuf};
 
+#[cfg(not(target_env = "sgx"))]
 use filetime::{self, FileTime};
 
 use crate::archive::ArchiveInner;
+#[cfg(not(target_env = "sgx"))]
 use crate::error::TarError;
 use crate::header::bytes2path;
+#[cfg(not(target_env = "sgx"))]
 use crate::other;
 use crate::{Archive, Header, PaxExtensions};
 
@@ -51,6 +58,7 @@ pub enum EntryIo<'a> {
 /// When unpacking items the unpacked thing is returned to allow custom
 /// additional handling by users. Today the File is returned, in future
 /// the enum may be extended with kinds for links, directories etc.
+#[cfg(not(target_env = "sgx"))]
 #[derive(Debug)]
 pub enum Unpacked {
     /// A file was unpacked.
@@ -199,6 +207,7 @@ impl<'a, R: Read> Entry<'a, R> {
     ///     file.unpack(format!("file-{}", i)).unwrap();
     /// }
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn unpack<P: AsRef<Path>>(&mut self, dst: P) -> io::Result<Unpacked> {
         self.fields.unpack(None, dst.as_ref())
     }
@@ -227,6 +236,7 @@ impl<'a, R: Read> Entry<'a, R> {
     ///     file.unpack_in("target").unwrap();
     /// }
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn unpack_in<P: AsRef<Path>>(&mut self, dst: P) -> io::Result<bool> {
         self.fields.unpack_in(dst.as_ref())
     }
@@ -314,6 +324,7 @@ impl<'a> EntryFields<'a> {
     }
 
     /// Gets the path in a "lossy" way, used for error reporting ONLY.
+    #[allow(dead_code)]
     fn path_lossy(&self) -> String {
         String::from_utf8_lossy(&self.path_bytes()).to_string()
     }
@@ -363,6 +374,7 @@ impl<'a> EntryFields<'a> {
         )))
     }
 
+    #[cfg(not(target_env = "sgx"))]
     fn unpack_in(&mut self, dst: &Path) -> io::Result<bool> {
         // Notes regarding bsdtar 2.8.3 / libarchive 2.8.3:
         // * Leading '/'s are trimmed. For example, `///test` is treated as
@@ -426,6 +438,7 @@ impl<'a> EntryFields<'a> {
         Ok(true)
     }
 
+    #[cfg(not(target_env = "sgx"))]
     /// Unpack as destination directory `dst`.
     fn unpack_dir(&mut self, dst: &Path) -> io::Result<()> {
         // If the directory already exists just let it slide
@@ -444,6 +457,7 @@ impl<'a> EntryFields<'a> {
     }
 
     /// Returns access to the header of this entry in the archive.
+    #[cfg(not(target_env = "sgx"))]
     fn unpack(&mut self, target_base: Option<&Path>, dst: &Path) -> io::Result<Unpacked> {
         fn set_perms_ownerships(
             dst: &Path,
@@ -464,6 +478,7 @@ impl<'a> EntryFields<'a> {
             Ok(())
         }
 
+        #[cfg(not(target_env = "sgx"))]
         fn get_mtime(header: &Header) -> Option<FileTime> {
             header.mtime().ok().map(|mtime| {
                 // For some more information on this see the comments in
@@ -618,6 +633,7 @@ impl<'a> EntryFields<'a> {
 
         // Ensure we write a new file rather than overwriting in-place which
         // is attackable; if an existing file is found unlink it.
+        #[cfg(not(target_env = "sgx"))]
         fn open(dst: &Path) -> io::Result<std::fs::File> {
             OpenOptions::new().write(true).create_new(true).open(dst)
         }
@@ -684,6 +700,7 @@ impl<'a> EntryFields<'a> {
         }
         return Ok(Unpacked::File(f));
 
+        #[cfg(not(target_env = "sgx"))]
         fn set_ownerships(
             dst: &Path,
             f: &Option<&mut std::fs::File>,
@@ -704,7 +721,7 @@ impl<'a> EntryFields<'a> {
             })
         }
 
-        #[cfg(unix)]
+        #[cfg(all(unix), not(target_env = "sgx"))]
         fn _set_ownerships(
             dst: &Path,
             f: &Option<&mut std::fs::File>,
@@ -756,6 +773,7 @@ impl<'a> EntryFields<'a> {
             Ok(())
         }
 
+        #[cfg(not(target_env = "sgx"))]
         fn set_perms(
             dst: &Path,
             f: Option<&mut std::fs::File>,
@@ -775,7 +793,7 @@ impl<'a> EntryFields<'a> {
             })
         }
 
-        #[cfg(unix)]
+        #[cfg(all(unix), not(target_env = "sgx"))]
         fn _set_perms(
             dst: &Path,
             f: Option<&mut std::fs::File>,
@@ -827,7 +845,7 @@ impl<'a> EntryFields<'a> {
             Err(io::Error::new(io::ErrorKind::Other, "Not implemented"))
         }
 
-        #[cfg(all(unix, feature = "xattr"))]
+        #[cfg(all(unix, feature = "xattr", not(target_env = "sgx")))]
         fn set_xattrs(me: &mut EntryFields, dst: &Path) -> io::Result<()> {
             use std::ffi::OsStr;
             use std::os::unix::prelude::*;
@@ -869,12 +887,13 @@ impl<'a> EntryFields<'a> {
         }
         // Windows does not completely support posix xattrs
         // https://en.wikipedia.org/wiki/Extended_file_attributes#Windows_NT
-        #[cfg(any(windows, not(feature = "xattr"), target_arch = "wasm32"))]
+        #[cfg(any(windows, not(feature = "xattr"), target_env = "sgx", target_arch = "wasm32"))]
         fn set_xattrs(_: &mut EntryFields, _: &Path) -> io::Result<()> {
             Ok(())
         }
     }
 
+    #[cfg(not(target_env = "sgx"))]
     fn ensure_dir_created(&self, dst: &Path, dir: &Path) -> io::Result<()> {
         let mut ancestor = dir;
         let mut dirs_to_create = Vec::new();
@@ -895,6 +914,7 @@ impl<'a> EntryFields<'a> {
         Ok(())
     }
 
+    #[cfg(not(target_env = "sgx"))]
     fn validate_inside_dst(&self, dst: &Path, file_dst: &Path) -> io::Result<PathBuf> {
         // Abort if target (canonical) parent is outside of `dst`
         let canon_parent = file_dst.canonicalize().map_err(|err| {

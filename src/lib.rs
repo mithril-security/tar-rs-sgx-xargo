@@ -23,9 +23,15 @@
 
 use std::io::{Error, ErrorKind};
 
+#[cfg(target_env = "sgx")]
+extern crate sgx_libc as libc;
+
 pub use crate::archive::{Archive, Entries};
 pub use crate::builder::Builder;
+#[cfg(not(target_env = "sgx"))]
 pub use crate::entry::{Entry, Unpacked};
+#[cfg(target_env = "sgx")]
+pub use crate::entry::Entry;
 pub use crate::entry_type::EntryType;
 pub use crate::header::GnuExtSparseHeader;
 pub use crate::header::{GnuHeader, GnuSparseHeader, Header, HeaderMode, OldHeader, UstarHeader};

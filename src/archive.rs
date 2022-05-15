@@ -1,13 +1,16 @@
 use std::cell::{Cell, RefCell};
 use std::cmp;
 use std::convert::TryFrom;
+#[cfg(not(target_env = "sgx"))]
 use std::fs;
 use std::io::prelude::*;
 use std::io::{self, SeekFrom};
 use std::marker;
+#[cfg(not(target_env = "sgx"))]
 use std::path::Path;
 
 use crate::entry::{EntryFields, EntryIo};
+#[cfg(not(target_env = "sgx"))]
 use crate::error::TarError;
 use crate::other;
 use crate::pax::pax_extensions_size;
@@ -103,6 +106,7 @@ impl<R: Read> Archive<R> {
     /// let mut ar = Archive::new(File::open("foo.tar").unwrap());
     /// ar.unpack("foo").unwrap();
     /// ```
+    #[cfg(not(target_env = "sgx"))]
     pub fn unpack<P: AsRef<Path>>(&mut self, dst: P) -> io::Result<()> {
         let me: &mut Archive<dyn Read> = self;
         me._unpack(dst.as_ref())
@@ -197,6 +201,7 @@ impl Archive<dyn Read + '_> {
         })
     }
 
+    #[cfg(not(target_env = "sgx"))]
     fn _unpack(&mut self, dst: &Path) -> io::Result<()> {
         if dst.symlink_metadata().is_err() {
             fs::create_dir_all(&dst)
