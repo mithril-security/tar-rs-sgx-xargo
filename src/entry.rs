@@ -721,7 +721,7 @@ impl<'a> EntryFields<'a> {
             })
         }
 
-        #[cfg(all(unix), not(target_env = "sgx"))]
+        #[cfg(all(unix, not(target_env = "sgx")))]
         fn _set_ownerships(
             dst: &Path,
             f: &Option<&mut std::fs::File>,
@@ -793,7 +793,7 @@ impl<'a> EntryFields<'a> {
             })
         }
 
-        #[cfg(all(unix), not(target_env = "sgx"))]
+        #[cfg(all(unix, not(target_env = "sgx")))]
         fn _set_perms(
             dst: &Path,
             f: Option<&mut std::fs::File>,
